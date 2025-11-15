@@ -1,10 +1,13 @@
 import cssText from "data-text:~style.css"
 import type { PlasmoCSConfig } from "plasmo"
-
-import { CountButton } from "~features/count-button"
+import { useEffect, useState } from "react"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://movie.douban.com/subject/*"]
+}
+
+export const getInlineAnchor = async () => {
+  return document.querySelector(".rating_betterthan")
 }
 
 /**
@@ -37,29 +40,158 @@ export const getStyle = (): HTMLStyleElement => {
   return styleElement
 }
 
+interface Rating {
+  Source: string
+  Value: string
+}
+
+interface OMDBResponse {
+  Title: string
+  Year: string
+  Ratings: Rating[]
+  imdbRating: string
+  Response: string
+}
+
 const MovieScores = () => {
+  const [shouldRender, setShouldRender] = useState(false)
+  const [scores, setScores] = useState({
+    imdb: "N/A",
+    rottenTomatoes: "N/A",
+    metacritic: "N/A"
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchMovieScores = async () => {
+      try {
+        // Find the IMDb ID by looking for the "IMDb:" label in the #info section
+        const infoDiv = document.querySelector("#info")
+        if (!infoDiv) {
+          setShouldRender(false)
+          setLoading(false)
+          return
+        }
+
+        // Find all spans with class "pl" (labels)
+        const labels = infoDiv.querySelectorAll("span.pl")
+        let imdbId = ""
+
+        // Look for the "IMDb:" label
+        for (const label of labels) {
+          if (label.textContent?.includes("IMDb")) {
+            // Get the next sibling after "IMDb:" label
+            let nextNode = label.nextSibling
+            while (nextNode) {
+              if (nextNode.nodeType === Node.TEXT_NODE) {
+                const text = nextNode.textContent?.trim()
+                if (text && text !== ":") {
+                  imdbId = text.replace(/^:\s*/, "").trim()
+                  break
+                }
+              } else if (
+                nextNode.nodeType === Node.ELEMENT_NODE &&
+                (nextNode as Element).tagName === "SPAN"
+              ) {
+                imdbId = (nextNode as Element).textContent?.trim() || ""
+                break
+              }
+              nextNode = nextNode.nextSibling
+            }
+            break
+          }
+        }
+
+        // Don't render if IMDb ID is empty
+        if (!imdbId) {
+          setShouldRender(false)
+          setLoading(false)
+          return
+        }
+
+        setShouldRender(true)
+
+        // Fetch data from OMDB API
+        const apiKey = "93941406"
+        const apiUrl = `https://www.omdbapi.com/?apikey=${apiKey}&i=${imdbId}&type=movie&r=json`
+
+        // Print the API key, API URL, and IMDb ID to check if they are correct
+        console.log("API Key:", apiKey)
+        console.log("API URL:", apiUrl)
+        console.log("IMDb ID:", imdbId)
+        
+        const response = await fetch(apiUrl)
+        const data: OMDBResponse = await response.json()
+
+        if (data.Response === "True" && data.Ratings) {
+          const newScores = {
+            imdb: "N/A",
+            rottenTomatoes: "N/A",
+            metacritic: "N/A"
+          }
+
+          // Parse ratings from API response
+          data.Ratings.forEach((rating) => {
+            if (rating.Source === "Internet Movie Database") {
+              newScores.imdb = rating.Value
+            } else if (rating.Source === "Rotten Tomatoes") {
+              newScores.rottenTomatoes = rating.Value
+            } else if (rating.Source === "Metacritic") {
+              newScores.metacritic = rating.Value
+            }
+          })
+
+          setScores(newScores)
+        }
+      } catch (error) {
+        console.error("Error fetching movie scores:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMovieScores()
+  }, [])
+
+  // Don't render if the XPath value is empty
+  if (!shouldRender) {
+    return null
+  }
+
   return (
-    <div className="plasmo-z-50 plasmo-fixed plasmo-top-60 plasmo-left-10">
-      <div className="plasmo-bg-[#E2B616] plasmo-rounded plasmo-shadow-lg plasmo-p-4 plasmo-w-48">
-        <div className="plasmo-text-sm plasmo-font-semibold plasmo-text-black plasmo-mb-3">
-          Movie Scores
+    <div className="plasmo-my-4 plasmo-w-full">
+      {/* Container */}
+      <div className="plasmo-bg-[#F0F3F5] plasmo-rounded plasmo-p-4 plasmo-w-full plasmo-text-[13px] plasmo-text-[#268DCD]">
+        {/* Title */}
+        <div className="plasmo-flex plasmo-justify-between plasmo-items-center plasmo-font-semibold plasmo-mb-4">
+          <span className="">全球评分</span>
         </div>
-        <div className="plasmo-space-y-2">
-          <div className="plasmo-flex plasmo-justify-between plasmo-items-center">
-            <span className="plasmo-text-xs plasmo-text-black">IMDb</span>
-            <span className="plasmo-text-sm plasmo-font-medium plasmo-text-black">8.6/10</span>
+        {/* Scores */}
+        <div className="plasmo-flex plasmo-flex-col plasmo-space-y-2 plasmo-my-3">
+          <div className="plasmo-flex plasmo-justify-between">
+            <span className="">IMDb</span>
+            <span className="" id="imdb-score">
+              {loading ? "加载中..." : scores.imdb}
+            </span>
           </div>
-          <div className="plasmo-flex plasmo-justify-between plasmo-items-center">
-            <span className="plasmo-text-xs plasmo-text-black">Rotten Tomatoes</span>
-            <span className="plasmo-text-sm plasmo-font-medium plasmo-text-black">96%</span>
+          <hr className="my-4"></hr>
+          <div className="plasmo-flex plasmo-justify-between">
+            <span className="">烂番茄</span>
+            <span className="" id="rotten-tomatoes-score">
+              {loading ? "加载中..." : scores.rottenTomatoes}
+            </span>
           </div>
-          <div className="plasmo-flex plasmo-justify-between plasmo-items-center">
-            <span className="plasmo-text-xs plasmo-text-black">Metacritic</span>
-            <span className="plasmo-text-sm plasmo-font-medium plasmo-text-black">95/100</span>
+          <hr className="my-4"></hr>
+          <div className="plasmo-flex plasmo-justify-between">
+            <span className="">Metacritic</span>
+            <span className="" id="metacritic-score">
+              {loading ? "加载中..." : scores.metacritic}
+            </span>
           </div>
         </div>
-        <div className="plasmo-text-xs plasmo-text-gray-700 plasmo-mt-3 plasmo-pt-2">
-          Data via <a href="https://www.omdbapi.com/" target="_blank" className="plasmo-underline plasmo-hover:text-black">OMDb</a>
+        {/* Data Source */}
+        <div className="plasmo-flex plasmo-justify-between plasmo-items-center3 plasmo-text-gray-400 plasmo-mt-4">
+          <span className="">Data via <a href="https://www.omdbapi.com/" target="_blank" className="plasmo-underline plasmo-hover:text-black">OMDb</a></span>
         </div>
       </div>
     </div>

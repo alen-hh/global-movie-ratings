@@ -1,8 +1,8 @@
 {
-  "name": "movie-scores",
-  "displayName": "Movie scores",
+  "name": "global-movie-scores",
+  "displayName": "全球电影评分",
   "version": "0.0.1",
-  "description": "Displays IMDb, Rotten Tomatoes & Metacritic movie scores on the Douban Movie page.",
+  "description": "在豆瓣电影网页上，展示该电影在 IMDb、烂番茄、Metacritic 的评分。",
   "author": "Alen Hu <huhaoyue0220@126.com>",
   "scripts": {
     "dev": "plasmo dev",
@@ -10,6 +10,7 @@
     "package": "plasmo package"
   },
   "dependencies": {
+    "dotenv": "^17.2.3",
     "plasmo": "0.90.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",
