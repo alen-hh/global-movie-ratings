@@ -111,8 +111,11 @@ const MovieScores = () => {
 
         setShouldRender(true)
 
-        // Fetch data from OMDB API
-        const apiKey = "93941406"
+        // Get API key from storage or use default
+        const DEFAULT_API_KEY = "93941406"
+        const result = await chrome.storage.sync.get(["omdbApiKey"])
+        const apiKey = result.omdbApiKey || DEFAULT_API_KEY
+        
         const apiUrl = `https://www.omdbapi.com/?apikey=${apiKey}&i=${imdbId}&type=movie&r=json`
 
         // Print the API key, API URL, and IMDb ID to check if they are correct
