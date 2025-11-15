@@ -150,8 +150,7 @@ See [LICENSE](LICENSE) file for details.
 
 ## 👤 Author
 
-**Alen Hu**
-- Email: huhaoyue0220@126.com
+**Alen Hu**: huhaoyue0220@126.com
 
 ## 🤝 Contributing
 
