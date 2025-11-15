@@ -1,5 +1,5 @@
 {
-  "name": "global-movie-scores",
+  "name": "global-movie-ratings",
   "displayName": "全球电影评分",
   "version": "0.0.1",
   "description": "在豆瓣电影网页上，展示该电影在 IMDb、烂番茄、Metacritic 的评分。",
