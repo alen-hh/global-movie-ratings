@@ -5,19 +5,23 @@ function OptionsPage() {
   const [apiKey, setApiKey] = useState("")
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [useCustomKey, setUseCustomKey] = useState(false)
 
   const DEFAULT_API_KEY = "93941406"
 
   useEffect(() => {
     // Load saved API key from storage
     chrome.storage.sync.get(["omdbApiKey"], (result) => {
-      setApiKey(result.omdbApiKey || DEFAULT_API_KEY)
+      const savedKey = result.omdbApiKey || DEFAULT_API_KEY
+      setApiKey(savedKey)
+      // Check if using custom key (not default)
+      setUseCustomKey(savedKey !== DEFAULT_API_KEY)
       setLoading(false)
     })
   }, [])
 
   const handleSave = () => {
-    const keyToSave = apiKey.trim() || DEFAULT_API_KEY
+    const keyToSave = useCustomKey ? apiKey.trim() || DEFAULT_API_KEY : DEFAULT_API_KEY
     
     chrome.storage.sync.set({ omdbApiKey: keyToSave }, () => {
       setSaved(true)
@@ -26,6 +30,7 @@ function OptionsPage() {
   }
 
   const handleReset = () => {
+    setUseCustomKey(false)
     setApiKey(DEFAULT_API_KEY)
     chrome.storage.sync.set({ omdbApiKey: DEFAULT_API_KEY }, () => {
       setSaved(true)
@@ -65,15 +70,78 @@ function OptionsPage() {
               ）
             </span>
           </label>
+
+          {/* Radio buttons for API key selection */}
+          <div className="plasmo-mb-4 plasmo-space-y-3">
+            <label
+              className={`plasmo-flex plasmo-items-center plasmo-gap-3 plasmo-cursor-pointer plasmo-p-3 plasmo-rounded-lg plasmo-border-2 plasmo-transition-colors hover:plasmo-bg-gray-50 ${
+                !useCustomKey
+                  ? "plasmo-border-purple-600 plasmo-bg-purple-50"
+                  : "plasmo-border-gray-200"
+              }`}>
+              <input
+                type="radio"
+                name="apiKeyType"
+                checked={!useCustomKey}
+                onChange={() => {
+                  setUseCustomKey(false)
+                  setApiKey(DEFAULT_API_KEY)
+                }}
+                className="plasmo-w-4 plasmo-h-4 plasmo-text-purple-600 plasmo-cursor-pointer"
+              />
+              <div className="plasmo-flex-1">
+                <div className="plasmo-text-sm plasmo-font-medium plasmo-text-gray-900">
+                  使用默认 API Key
+                </div>
+                <div className="plasmo-text-xs plasmo-text-gray-600 plasmo-mt-1">
+                  推荐选项，无需配置即可使用
+                </div>
+              </div>
+            </label>
+
+            <label
+              className={`plasmo-flex plasmo-items-center plasmo-gap-3 plasmo-cursor-pointer plasmo-p-3 plasmo-rounded-lg plasmo-border-2 plasmo-transition-colors hover:plasmo-bg-gray-50 ${
+                useCustomKey
+                  ? "plasmo-border-purple-600 plasmo-bg-purple-50"
+                  : "plasmo-border-gray-200"
+              }`}>
+              <input
+                type="radio"
+                name="apiKeyType"
+                checked={useCustomKey}
+                onChange={() => {
+                  setUseCustomKey(true)
+                  setApiKey("")
+                }}
+                className="plasmo-w-4 plasmo-h-4 plasmo-text-purple-600 plasmo-cursor-pointer"
+              />
+              <div className="plasmo-flex-1">
+                <div className="plasmo-text-sm plasmo-font-medium plasmo-text-gray-900">
+                  使用自定义 API Key
+                </div>
+                <div className="plasmo-text-xs plasmo-text-gray-600 plasmo-mt-1">
+                  使用你自己的 API Key，享受独立配额
+                </div>
+              </div>
+            </label>
+          </div>
+
           <input
             type="text"
-            value={apiKey}
+            value={useCustomKey ? apiKey : ""}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Enter your OMDB API key"
-            className="plasmo-w-full plasmo-px-4 plasmo-py-3 plasmo-text-sm plasmo-border-2 plasmo-border-gray-300 plasmo-rounded-lg focus:plasmo-outline-none focus:plasmo-border-purple-600 focus:plasmo-ring-4 focus:plasmo-ring-purple-100 plasmo-transition-all plasmo-font-mono"
+            placeholder={useCustomKey ? "输入你的 OMDB API Key" : "默认内置 API Key"}
+            disabled={!useCustomKey}
+            className={`plasmo-w-full plasmo-px-4 plasmo-py-3 plasmo-text-sm plasmo-border-2 plasmo-rounded-lg plasmo-transition-all plasmo-font-mono ${
+              useCustomKey
+                ? "plasmo-border-gray-300 focus:plasmo-outline-none focus:plasmo-border-purple-600 focus:plasmo-ring-4 focus:plasmo-ring-purple-100 plasmo-bg-white"
+                : "plasmo-border-gray-200 plasmo-bg-gray-50 plasmo-text-gray-500 plasmo-cursor-not-allowed"
+            }`}
           />
           <p className="plasmo-text-sm plasmo-text-gray-600 plasmo-mt-2 plasmo-leading-relaxed">
-            默认使用内置的 API Key。如果遇到配额限制，可以申请自己的免费 API Key。
+            {useCustomKey
+              ? "输入你自己的 API Key，享受独立配额。"
+              : "默认使用内置的 API Key。如果遇到配额限制，可以申请自己的免费 API Key。"}
           </p>
         </div>
 
